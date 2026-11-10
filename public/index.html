@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#101923" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="K-Cathedral" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <title>K-Cathedral Metaverse v8</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div id="loading"><div class="loader-cross">✝</div><b>K-CATHEDRAL</b><span>가상 성당에 입장하는 중...</span></div>
+  <section id="join-screen" class="overlay">
+    <div class="join-card">
+      <div class="cross">✝</div>
+      <p class="eyebrow">VIRTUAL COMMUNITY</p>
+      <h1>K-CATHEDRAL</h1>
+      <p class="sub">한국의 아름다운 성당을 함께 거닐어 보세요.</p>
+      <div class="auth-tabs"><button id="login-tab" class="selected" type="button">로그인</button><button id="register-tab" type="button">회원가입</button></div>
+      <label for="email">이메일</label><input id="email" type="email" autocomplete="username" placeholder="email@example.com" />
+      <label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password" placeholder="8자 이상" />
+      <div id="register-fields" class="hidden">
+        <label for="nickname">닉네임</label><input id="nickname" maxlength="14" placeholder="성당에서 사용할 이름" value="순례자" />
+        <label for="avatar-color">캐릭터 색상</label><input id="avatar-color" type="color" value="#b9c9e8" />
+      </div>
+      <button id="enter-btn" type="button" onclick="if(window.__kcatEnter){window.__kcatEnter()}else{document.getElementById('auth-error').textContent='로그인 모듈이 아직 준비되지 않았습니다. 페이지를 새로고침하고 F12 Console 오류를 확인해 주세요.'}">로그인하고 입장하기 <span>→</span></button><p id="auth-error" class="auth-error"></p>
+      <small>PC: WASD 이동 · 마우스 드래그 시점 · Shift 달리기<br>iPhone: 화면 왼쪽 조이스틱 이동 · 오른쪽 드래그 시점</small>
+    </div>
+  </section>
+
+  <div id="hud" class="hidden">
+    <header class="topbar">
+      <div class="brand"><span>✝</span><div><b>K-CATHEDRAL</b><small>가상 성당 공동체</small></div></div>
+      <div class="online"><i></i><span id="online-count">1명 접속</span></div>
+    </header>
+    <div class="location-pill" id="location-pill">성전 내부 <span>·</span> 중앙 회중석</div>
+    <div id="mass-banner" class="mass-banner"><b>✝ 미사 진행 중</b><span id="mass-phase-title">입당 예식</span><small id="mass-phase-detail">모두 자리에서 경건하게 미사를 시작합니다.</small></div>
+    <div id="candle-counter" class="candle-counter">🕯️ 봉헌된 기도 초 <b id="candle-count">0</b></div>
+    <div id="profile-pill" class="profile-pill"><img id="profile-avatar" class="profile-avatar" alt="내 프로필 사진" /><span id="profile-name">순례자</span><input id="profile-color" type="color" value="#b9c9e8" title="캐릭터 색상 변경"/><select id="profile-outfit" title="의상 선택"><option value="casual">평상복</option><option value="formal">정장</option><option value="choir">성가대복</option><option value="priest">사제복</option></select><input id="profile-bio" maxlength="240" placeholder="한 줄 자기소개" title="자기소개" /><input id="profile-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden /><button id="profile-avatar-upload" type="button">사진</button><button id="save-profile" title="프로필 저장">저장</button><button id="logout-btn" title="로그아웃">나가기</button></div>
+    <aside id="prayer-wall" class="prayer-wall"><b>기도 봉헌 게시판</b><div id="prayer-list">기도를 봉헌하면 이곳에 기록됩니다.</div><form id="prayer-form"><input id="prayer-input" maxlength="120" placeholder="함께 나누고 싶은 기도 지향..." /><button type="submit">봉헌</button></form></aside>
+    <div id="interaction-hint" class="interaction-hint">E 키를 눌러 주변 공간과 상호작용</div>
+    <canvas id="minimap" width="150" height="150" aria-label="성당 미니맵"></canvas>
+    <div class="action-bar">
+      <button id="action-menu-toggle" class="action-menu-toggle" type="button" aria-expanded="false">☰ <span>메뉴</span></button>
+      <div id="action-menu" class="action-menu hidden">
+        <div class="action-menu-head"><strong>성당 메뉴</strong><button id="action-menu-close" type="button" aria-label="메뉴 닫기">×</button></div>
+        <details class="action-group" open>
+          <summary>🙏 동작</summary>
+          <div class="action-group-buttons">
+            <button data-action="pray">🙏 <span>기도</span></button>
+            <button data-action="sit">🪑 <span>앉기</span></button>
+            <button data-action="idle">🚶 <span>일어서기</span></button>
+            <button data-action="wave">👋 <span>손 흔들기</span></button>
+            <button data-action="bow">🙇 <span>인사</span></button>
+            <button data-action="kneel">🧎 <span>무릎 꿇기</span></button>
+            <button id="view-toggle" title="시점 전환">👁️ <span>시점</span></button>
+          </div>
+        </details>
+        <details class="action-group">
+          <summary>⛪ 성당 활동</summary>
+          <div class="action-group-buttons">
+            <button id="mass-toggle" class="celebrant-only hidden" type="button">⛪ <span>미사 시작</span></button>
+            <button id="mass-control-toggle" class="celebrant-only hidden" type="button">📖 <span>미사 순서</span></button>
+            <button id="light-candle" type="button">🕯️ <span>초 봉헌</span></button>
+            <button id="lighting-btn" type="button">🌙 <span>조명</span></button>
+            <button id="choir-play-btn" type="button">🎼 <span>성가</span></button>
+          </div>
+        </details>
+        <details class="action-group">
+          <summary>👥 공동체</summary>
+          <div class="action-group-buttons">
+            <button id="friends-toggle" type="button">👥 <span>친구</span></button>
+            <button id="spaces-toggle" type="button">🗺️ <span>공간</span></button>
+            <button id="youth-room-toggle" type="button">🧑‍🤝‍🧑 <span>청년회실</span></button>
+            <button id="admin-toggle" class="admin-only hidden" type="button">⚙️ <span>관리</span></button>
+          </div>
+        </details>
+        <details class="action-group">
+          <summary>🎙️ 소통·미디어</summary>
+          <div class="action-group-buttons">
+            <button id="voice-btn" type="button">🎙️ <span>음성</span></button>
+            <button id="stream-toggle" type="button">📺 <span>영상</span></button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div id="chat-panel">
+      <div class="chat-head">공동체 대화 <button id="chat-toggle">−</button></div>
+      <div id="chat-log"></div>
+      <form id="chat-form"><input id="chat-input" maxlength="180" placeholder="메시지 입력..." /><button>전송</button></form>
+    </div>
+    <div id="joystick"><div id="stick"></div></div>
+    <div class="mobile-hint">왼쪽으로 이동 · 오른쪽 화면을 드래그해 둘러보기</div>
+    <section id="youth-room-panel" class="floating-panel hidden">
+      <div class="panel-head">청년회실 <span id="youth-online-count">접속 0명</span><button data-close="youth-room-panel">×</button></div>
+      <section class="youth-community-portal">
+        <div class="youth-portal-heading"><strong>청년회 일정·공지</strong><div><button id="youth-push-enable" type="button">알림 켜기</button><button id="youth-portal-refresh" type="button">새로고침</button></div></div>
+        <div id="youth-checkin-result" class="youth-checkin-result"></div>
+        <div class="youth-community-tools">
+          <div class="youth-portal-heading"><strong>📸 청년회 사진 앨범</strong></div>
+          <form id="youth-album-form" class="youth-portal-form">
+            <input id="youth-album-title" maxlength="80" placeholder="사진 설명 (선택)">
+            <input id="youth-album-file" type="file" accept="image/jpeg,image/png,image/webp" required>
+            <button type="submit">사진 올리기</button>
+          </form>
+          <div id="youth-album-list" class="youth-community-list">사진을 불러오는 중...</div>
+          <div class="youth-portal-heading"><strong>📋 청년회 게시판</strong></div>
+          <form id="youth-board-form" class="youth-portal-form">
+            <input id="youth-board-title" maxlength="100" placeholder="게시글 제목" required>
+            <textarea id="youth-board-body" maxlength="3000" placeholder="청년회와 나누고 싶은 이야기" required></textarea>
+            <button type="submit">게시글 등록</button>
+          </form>
+          <div id="youth-board-list" class="youth-community-list">게시글을 불러오는 중...</div>
+          <div class="youth-portal-heading"><strong>🎂 회원 생일</strong></div>
+          <form id="youth-birthday-form" class="youth-portal-form">
+            <label>내 생일 <input id="youth-birthday" type="date"></label>
+            <button type="submit">생일 저장</button>
+          </form>
+          <div id="youth-birthday-list" class="youth-community-list"></div>
+          <div id="youth-pending-members" class="youth-community-list"></div>
+        </div>
+
+        <div id="youth-admin-dashboard" class="youth-admin-dashboard hidden"></div>
+        <div id="youth-announcements-list" class="youth-portal-list">공지를 불러오는 중...</div>
+        <div class="youth-portal-heading"><strong>모임 일정 달력</strong></div>
+        <div class="youth-calendar-nav"><button id="youth-calendar-prev" type="button">‹</button><strong id="youth-calendar-month"></strong><button id="youth-calendar-next" type="button">›</button></div>
+        <div id="youth-calendar" class="youth-calendar"></div>
+        <div id="youth-event-list" class="youth-portal-list"></div>
+        <div class="youth-portal-heading"><strong>청년회 투표</strong><button id="youth-polls-refresh" type="button">새로고침</button></div>
+        <div id="youth-polls-list" class="youth-portal-list">투표를 불러오는 중...</div>
+        <div id="youth-bookings-list" class="youth-portal-list"></div>
+        <div id="youth-admin-tools" class="youth-admin-tools hidden">
+          <details><summary>관리자: 일정·공지 등록</summary>
+            <form id="youth-event-form" class="youth-portal-form">
+              <input id="youth-event-title" maxlength="100" placeholder="모임 일정 제목" required>
+              <input id="youth-event-start" type="datetime-local" required>
+              <input id="youth-event-end" type="datetime-local" required>
+              <input id="youth-event-place" maxlength="100" placeholder="장소">
+              <textarea id="youth-event-description" maxlength="500" placeholder="일정 설명"></textarea>
+              <button>일정 등록</button>
+            </form>
+            <form id="youth-poll-form" class="youth-portal-form">
+              <strong>투표 만들기</strong>
+              <input id="youth-poll-question" maxlength="180" placeholder="투표 질문" required>
+              <input class="youth-poll-option-input" maxlength="100" placeholder="선택지 1" required>
+              <input class="youth-poll-option-input" maxlength="100" placeholder="선택지 2" required>
+              <input class="youth-poll-option-input" maxlength="100" placeholder="선택지 3 (선택)">
+              <input class="youth-poll-option-input" maxlength="100" placeholder="선택지 4 (선택)">
+              <button>투표 게시</button>
+          </form>
+          <form id="youth-announcement-form" class="youth-portal-form">
+              <input id="youth-announcement-title" maxlength="100" placeholder="공지 제목" required>
+              <textarea id="youth-announcement-body" maxlength="2000" placeholder="공지 내용" required></textarea>
+              <button>공지 게시</button>
+            </form>
+          </details>
+          <details><summary>관리자: 출석 QR·회비 관리</summary>
+            <div class="youth-quick-qr">
+              <strong>출석 QR 바로 만들기</strong>
+              <form id="youth-quick-qr-form" class="youth-portal-form">
+                <input id="youth-quick-qr-title" maxlength="100" placeholder="모임 이름 (예: 11월 청년회 모임)" required>
+                <button type="submit">출석 QR 생성하기</button>
+              </form>
+              <small>일정 달력을 만들지 않아도 QR을 생성할 수 있습니다. QR은 24시간 유효합니다.</small>
+            </div>
+            <div id="youth-checkin-admin-list"></div>
+            <form id="youth-payment-form" class="youth-portal-form">
+              <strong>회비 납부 기록</strong>
+              <input id="youth-payment-email" type="email" placeholder="회원 이메일" required>
+              <input id="youth-payment-month" type="month" required>
+              <input id="youth-payment-amount" type="number" min="0" placeholder="금액(원)" required>
+              <select id="youth-payment-status"><option value="paid">납부 완료</option><option value="unpaid">미납</option></select>
+              <button>회비 기록 저장</button>
+            </form>
+            <form id="youth-expense-form" class="youth-portal-form">
+              <strong>지출 기록</strong>
+              <input id="youth-expense-title" maxlength="100" placeholder="지출 항목" required>
+              <input id="youth-expense-amount" type="number" min="1" placeholder="금액(원)" required>
+              <input id="youth-expense-note" maxlength="200" placeholder="메모">
+              <button>지출 저장</button>
+            </form>
+            <div id="youth-finance-summary"></div>
+          </details>
+          <details><summary>관리자: 회원·권한 관리</summary>
+            <div id="youth-member-admin-list">회원 목록을 불러오는 중...</div>
+            <div id="youth-member-activity"></div>
+          </details>
+        </div>
+      </section>
+      <div class="youth-room-tabs"><button data-youth-tab="chat" class="selected">자유 대화</button><button data-youth-tab="meeting">회의 안건</button><button data-youth-tab="game">게임</button><button data-youth-tab="karaoke">노래방</button><button data-youth-tab="movie">영화</button><button data-youth-tab="groups">소그룹</button></div>
+      <div id="youth-chat-tab" class="youth-tab">
+        <div id="youth-chat-log" class="youth-chat-log"></div>
+        <form id="youth-chat-form"><input id="youth-chat-input" maxlength="180" placeholder="청년회실 사람들과 대화하기..." /><button>전송</button></form>
+      </div>
+      <div id="youth-meeting-tab" class="youth-tab hidden">
+        <p class="panel-note">함께 논의할 안건을 올리고 다른 참여자들이 투표할 수 있습니다.</p>
+        <form id="youth-agenda-form"><input id="youth-agenda-input" maxlength="100" placeholder="회의 안건 입력..." /><button>안건 등록</button></form>
+        <div id="youth-agenda-list"></div>
+      </div>
+      <div id="youth-game-tab" class="youth-tab hidden">
+        <p class="panel-note">청년회실에 있는 다른 참여자와 가위바위보를 할 수 있습니다.</p>
+        <div class="youth-rps-buttons"><button data-rps="rock">✊ 바위</button><button data-rps="paper">✋ 보</button><button data-rps="scissors">✌️ 가위</button></div>
+        <div id="youth-game-status" class="youth-game-status">상대방을 기다리고 있습니다.</div>
+        <h4>함께하는 틱택토</h4><div id="youth-ttt-board" class="youth-ttt-board"></div>
+        <div id="youth-ttt-status" class="youth-game-status">두 명이 참가하면 시작합니다.</div>
+        <button id="youth-ttt-reset" type="button">새 게임</button>
+      </div>
+      <div id="youth-karaoke-tab" class="youth-tab hidden">
+        <p class="panel-note">함께 부르고 싶은 곡을 신청해 순서를 정해 보세요. 음원 재생은 각 곡의 공개 링크를 사용합니다.</p>
+        <form id="youth-karaoke-form" class="youth-form"><input id="youth-karaoke-title" maxlength="80" placeholder="곡 제목 / 가수" required><input id="youth-karaoke-url" type="url" placeholder="YouTube 링크(선택)"><button>곡 신청</button></form>
+        <div id="youth-karaoke-list" class="youth-list"></div>
+      </div>
+      <div id="youth-movie-tab" class="youth-tab hidden">
+        <p class="panel-note">청년회실 참여자에게 함께 볼 공개 YouTube 영상을 공유합니다. 영상의 재생·일시정지는 각 브라우저에서 조작합니다.</p>
+        <form id="youth-movie-form" class="youth-form"><input id="youth-movie-title" maxlength="80" placeholder="영상 제목" required><input id="youth-movie-url" type="url" placeholder="YouTube 영상 주소" required><button>영상 공유</button></form>
+        <div id="youth-movie-player" class="youth-movie-player">아직 함께 보는 영상이 없습니다.</div>
+      </div>
+      <div id="youth-groups-tab" class="youth-tab hidden">
+        <p class="panel-note">관심사별 소그룹에 참여해 보세요. 현재 한 그룹에만 참여할 수 있습니다.</p>
+        <div id="youth-groups-list" class="youth-list"></div>
+        <div id="youth-group-room" class="youth-group-room hidden">
+          <h4 id="youth-group-room-title">소그룹 대화방</h4>
+          <div id="youth-group-chat-log" class="youth-chat-log"></div>
+          <form id="youth-group-chat-form"><input id="youth-group-chat-input" maxlength="300" placeholder="우리 소그룹에 메시지 보내기"><button>전송</button></form>
+          <div id="youth-group-role" class="youth-group-role">소그룹 방장을 확인하는 중...</div>
+          <div class="youth-meeting-tools">
+            <button id="youth-hand-raise" type="button">✋ 손들기</button>
+            <span id="youth-hands-status">손든 참여자 없음</span>
+          </div>
+          <section id="youth-attendance-section" class="youth-attendance-section hidden">
+            <div class="youth-attendance-heading"><strong>출석 관리</strong><button id="youth-attendance-refresh" type="button">새로고침</button><button id="youth-attendance-export" type="button">CSV 저장</button></div>
+            <div id="youth-attendance-list">출석 정보를 불러오는 중...</div>
+            <div id="youth-attendance-dashboard" class="youth-attendance-dashboard"></div>
+          </section>
+          <section class="youth-recording-library">
+            <div class="youth-attendance-heading"><strong>녹화 영상 보관함</strong><button id="youth-recordings-refresh" type="button">새로고침</button></div>
+            <div id="youth-recordings-list">저장된 녹화가 없습니다.</div>
+            <p class="panel-note">녹화 종료 후 서버 보관을 선택하면 재생 목록에 추가됩니다.</p>
+          </section>
+          <div id="youth-leader-tools" class="youth-leader-tools hidden">
+            <label>방장 위임 <select id="youth-leader-select"></select></label><button id="youth-leader-assign" type="button">방장 지정</button>
+          </div>
+          <div class="youth-video-controls"><button id="youth-video-start" type="button">📹 화상회의 시작</button><button id="youth-video-stop" type="button">회의 종료</button><button id="youth-screen-start" type="button">🖥️ 화면 공유</button><button id="youth-screen-stop" type="button">공유 중지</button></div>
+          <div class="youth-recording-controls">
+            <button id="youth-record-start" type="button">⏺ 이 기기 녹화 시작</button>
+            <button id="youth-record-stop" type="button" disabled>녹화 종료</button><button id="youth-record-upload" type="button" disabled>서버 보관</button>
+            <span id="youth-record-status">참여자 동의를 받은 뒤 녹화하세요.</span>
+          </div>
+          <div id="youth-video-grid" class="youth-video-grid"></div>
+          <div class="youth-presentation-tools">
+            <label for="youth-presentation-file">발표 자료 공유 (PDF·PNG·JPG·WEBP)</label>
+            <input id="youth-presentation-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp">
+            <div id="youth-presentation-view" class="youth-presentation-view">공유된 발표 자료가 없습니다.<div id="youth-presenter-pointer" class="youth-presenter-pointer hidden">●</div></div>
+            <button id="youth-presentation-clear" type="button">자료 공유 해제</button>
+          </div>
+          <p class="panel-note">화상회의는 카메라·마이크 권한과 HTTPS 또는 localhost가 필요합니다. 화면 공유는 브라우저 권한이 필요하며 방장만 시작할 수 있습니다.</p>
+        </div>
+        <button id="youth-group-leave" type="button">소그룹 나가기</button>
+      </div>
+      <p class="panel-note">게임과 회의 기능은 청년회실 안에 있는 참여자끼리 이용할 수 있습니다.</p>
+    </section>
+    <section id="spaces-panel" class="floating-panel hidden"><div class="panel-head">성당 공간 이동 <button data-close="spaces-panel">×</button></div><button data-teleport="nave">중앙 성전</button><button data-teleport="chapel">성모 기도실</button><button data-teleport="crypt">지하 묵상실</button><button data-teleport="garden">야외 정원</button></section>
+    <section id="friends-panel" class="floating-panel hidden"><div class="panel-head">친구와 개인 메시지 <button data-close="friends-panel">×</button></div><form id="friend-add-form"><input id="friend-query" maxlength="120" placeholder="친구 이메일 또는 정확한 닉네임" /><button>친구 추가</button></form><div class="friend-columns"><div><b>친구 요청</b><div id="friend-requests"></div></div><div><b>내 친구</b><div id="friend-list"></div></div></div><div id="dm-box" class="dm-box hidden"><b id="dm-title">대화</b><div id="dm-log"></div><form id="dm-form"><input id="dm-input" maxlength="500" placeholder="친구에게 메시지 보내기..." /><button>전송</button></form></div></section>
+    <section id="stream-panel" class="floating-panel hidden"><div class="panel-head">온라인 영상 <button data-close="stream-panel">×</button></div><div id="stream-player-wrap"><p>현재 송출 중인 영상이 없습니다.</p></div><div class="stream-host-controls celebrant-only hidden"><input id="stream-title" maxlength="60" placeholder="영상 제목" /><input id="stream-url" type="url" placeholder="YouTube 라이브/영상 주소" /><button id="stream-start">영상 송출 시작</button><button id="stream-stop">송출 종료</button></div><p class="panel-note">영상은 YouTube 임베드 주소로 표시됩니다. 실제 미사 중계 권한과 저작권을 확인한 뒤 사용하세요.</p></section>
+    <section id="mass-control-panel" class="floating-panel hidden"><div class="panel-head">미사 진행 순서 <button data-close="mass-control-panel">×</button></div><p class="panel-note">진행자는 현재 예식 순서를 선택해 모든 참여자 화면에 공유할 수 있습니다.</p><div id="mass-phase-buttons" class="mass-phase-buttons"></div></section>
+    <section id="admin-panel" class="floating-panel hidden"><div class="panel-head">관리자 대시보드 <button data-close="admin-panel">×</button></div><div id="admin-stats" class="admin-stats"></div><div id="admin-users" class="admin-users"></div></section>
+    <div id="toast"></div>
+  </div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  function mode(m){
+    const login=m==="login";
+    $("login-tab").classList.toggle("selected",login);
+    $("register-tab").classList.toggle("selected",!login);
+    $("register-fields").classList.toggle("hidden",login);
+    $("enter-btn").innerHTML=login?'로그인하고 입장하기 <span>→</span>':'회원가입하고 입장하기 <span>→</span>';
+    $("password").autocomplete=login?"current-password":"new-password";
+    $("auth-error").textContent="";
+    window.__kcatAuthMode=m;
+  }
+  $("login-tab").addEventListener("click",()=>mode("login"));
+  $("register-tab").addEventListener("click",()=>mode("register"));
+  $("enter-btn").addEventListener("pointerdown",function(){ this.dataset.pointerPressed="1"; },{passive:true});
+  $("enter-btn").addEventListener("click",function(){
+    if(!window.__kcatMainReady){
+      $("auth-error").textContent="앱 초기화가 완료되지 않았습니다. 아래 오류 문구 또는 F12 → Console의 첫 번째 오류를 확인해 주세요.";
+    }
+  },true);
+  window.addEventListener("error",function(e){
+    if(e.target && e.target.tagName==="SCRIPT") $("auth-error").textContent="앱 스크립트를 불러오지 못했습니다. npm start로 서버를 실행했는지 확인해 주세요.";
+  },true);
+  window.addEventListener("unhandledrejection",function(){
+    $("auth-error").textContent="앱 초기화 중 오류가 발생했습니다. 서버 실행 상태와 터미널 오류를 확인해 주세요.";
+  });
+})();
+</script>
+\n  <script src="/socket.io/socket.io.js"></script>
+  
+<script type="module">
+  const errorBox = document.getElementById("auth-error");
+  window.addEventListener("error", (event) => {
+    if (event.message) errorBox.textContent = "앱 오류: " + event.message;
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    errorBox.textContent = "앱 초기화 오류: " + (reason?.message || String(reason));
+  });
+  import("/main.js")
+    .then(() => {
+      if (!window.__kcatMainReady) {
+        errorBox.textContent = "앱 스크립트가 실행을 완료하지 못했습니다. F12 Console의 첫 번째 오류를 확인해 주세요.";
+      }
+    })
+    .catch((error) => {
+      errorBox.textContent = "앱 스크립트 로드 실패: " + (error?.message || String(error)) +
+        " (F12 → Console에서 자세한 오류를 확인해 주세요.)";
+      console.error("K-Cathedral startup failed:", error);
+    });
+</script>
+</body>
+</html>

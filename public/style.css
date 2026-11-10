@@ -1,0 +1,341 @@
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#fff;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}button,input{font:inherit}button{cursor:pointer;border:0}#loading{display:none!important;position:fixed;inset:0;z-index:20;background:#101923;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;letter-spacing:.18em}#loading span{font-size:12px;color:#9eacb8;letter-spacing:0}.loader-cross{font-size:48px;color:#d7c49b}.overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:linear-gradient(120deg,rgba(9,19,28,.93),rgba(18,31,43,.76)),radial-gradient(circle at 50% 40%,#506276,#101923)}.join-card{width:min(90vw,420px);padding:38px 34px;border:1px solid #ffffff24;border-radius:22px;background:rgba(16,27,38,.9);box-shadow:0 24px 80px #0008;text-align:center;backdrop-filter:blur(16px)}.cross{font-size:44px;color:#d8c69f}.eyebrow{font-size:10px;letter-spacing:.28em;color:#bca77c;margin:12px 0}.join-card h1{font-family:Georgia,serif;font-size:30px;letter-spacing:.1em;margin:0}.sub{font-size:13px;color:#bdc8d0;margin:12px 0 28px}.join-card label{display:block;text-align:left;font-size:12px;color:#cbd4dc;margin:0 0 8px}.join-card input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid #ffffff2b;background:#0b151f;color:white;outline:none}.join-card button{width:100%;margin:14px 0 18px;padding:14px;border-radius:10px;background:#c8b184;color:#1c2023;font-weight:750}.join-card button span{float:right}.join-card small{display:block;font-size:10px;line-height:1.8;color:#91a0ad}.hidden{display:none!important}#hud{position:fixed;inset:0;pointer-events:none}.topbar{position:absolute;top:0;left:0;right:0;height:66px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#07111bd9,transparent);pointer-events:auto}.brand{display:flex;align-items:center;gap:10px}.brand>span{font-size:26px;color:#d7c49b}.brand b{font:600 12px Georgia,serif;letter-spacing:.16em;display:block}.brand small{font-size:9px;color:#b8c1c8}.online{font-size:11px;color:#e4e9ec;background:#0d1b28bb;border:1px solid #ffffff20;padding:8px 11px;border-radius:30px}.online i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#76d6a0;margin-right:6px}.location-pill{position:absolute;top:78px;left:50%;transform:translateX(-50%);font-size:11px;color:#f1e8d8;background:#101d29a8;border:1px solid #ffffff20;border-radius:30px;padding:8px 14px;white-space:nowrap}.location-pill span{color:#bda87e;margin:0 5px}.action-bar{position:absolute;top:78px;right:16px;display:flex;gap:7px;pointer-events:auto}.action-bar button{background:#101e2bc9;border:1px solid #ffffff26;border-radius:11px;color:#fff;padding:9px 10px;font-size:16px}.action-bar button span{font-size:10px;margin-left:3px}#chat-panel{position:absolute;right:16px;bottom:18px;width:270px;height:210px;border:1px solid #ffffff25;border-radius:14px;background:#0b1723d9;backdrop-filter:blur(10px);display:flex;flex-direction:column;pointer-events:auto;overflow:hidden}.chat-head{padding:10px 12px;font-size:11px;font-weight:700;border-bottom:1px solid #ffffff1b}.chat-head button{float:right;background:none;color:#fff}#chat-log{flex:1;overflow:auto;padding:8px 11px;font-size:11px;color:#d8e0e6}.chat-line{margin:5px 0;line-height:1.5;overflow-wrap:anywhere}.chat-line b{color:#d4bd8e;margin-right:5px}#chat-form{display:flex;border-top:1px solid #ffffff1b}#chat-input{min-width:0;flex:1;background:transparent;color:#fff;border:0;padding:10px;font-size:11px;outline:none}#chat-form button{background:#c8b184;color:#17212a;padding:0 12px;font-size:11px;font-weight:700}#joystick{display:none;position:absolute;left:24px;bottom:40px;width:112px;height:112px;border-radius:50%;background:#ffffff20;border:1px solid #ffffff55;pointer-events:auto;touch-action:none}#stick{position:absolute;left:34px;top:34px;width:42px;height:42px;border-radius:50%;background:#d5c39d;box-shadow:0 4px 15px #0005}.mobile-hint{display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:9px;color:#ffffff9c;white-space:nowrap}#toast{position:absolute;top:125px;left:50%;transform:translateX(-50%);font-size:11px;background:#111e2bcc;border:1px solid #ffffff2a;padding:8px 13px;border-radius:20px;opacity:0;transition:opacity .2s}#toast.show{opacity:1}@media(max-width:700px){.topbar{height:58px;padding:10px 13px}.location-pill{top:66px}.action-bar{top:auto;right:12px;bottom:165px;flex-direction:column}.action-bar button{padding:9px 11px}#chat-panel{left:12px;right:12px;bottom:12px;width:auto;height:130px}#joystick{display:block}.mobile-hint{display:block}#chat-panel.collapsed{height:38px}#chat-panel.collapsed #chat-log,#chat-panel.collapsed #chat-form{display:none}.join-card{padding:30px 24px}.join-card h1{font-size:25px}}
+.candle-counter{position:absolute;top:122px;left:16px;background:#101e2bc9;border:1px solid #ffffff26;border-radius:10px;padding:8px 11px;font-size:10px;color:#e8ddc8}.candle-counter b{color:#f2c979;margin-left:6px;font-size:13px}
+.interaction-hint{position:absolute;left:50%;bottom:245px;transform:translateX(-50%);padding:8px 13px;border-radius:20px;background:#101e2bc9;border:1px solid #ffffff25;font-size:10px;color:#f4e8ce;opacity:0;transition:opacity .2s;white-space:nowrap}.interaction-hint.show{opacity:1}
+#minimap{position:absolute;left:16px;bottom:18px;width:116px;height:116px;border-radius:12px;border:1px solid #ffffff44;background:#0b1723c9;pointer-events:none}
+@media(max-width:700px){.action-bar{max-height:43vh;overflow:auto}.candle-counter{top:108px;left:12px}.interaction-hint{bottom:152px}#minimap{width:82px;height:82px;left:auto;right:12px;bottom:154px}.mobile-hint{bottom:145px}}
+
+.auth-tabs{display:flex;gap:6px;margin:0 0 18px;padding:4px;border-radius:10px;background:#0b151f}.auth-tabs button{flex:1;margin:0;padding:9px;background:transparent;color:#aeb9c2;border-radius:7px;font-size:12px}.auth-tabs button.selected{background:#c8b184;color:#1c2023}
+#register-fields{margin-top:12px;text-align:left}#register-fields label{margin-top:10px}#avatar-color{height:40px;padding:4px}
+.auth-error{min-height:16px;margin:0 0 8px;color:#ff9b91;font-size:11px}
+.profile-pill{position:absolute;top:122px;right:16px;background:#101e2bc9;border:1px solid #ffffff26;border-radius:10px;padding:7px 9px;font-size:10px;pointer-events:auto}.profile-pill button{margin-left:8px;background:transparent;color:#e8c98b;font-size:10px}
+.prayer-wall{position:absolute;left:16px;top:165px;width:190px;max-height:170px;overflow:auto;padding:10px;border-radius:11px;background:#101e2bc9;border:1px solid #ffffff26;font-size:10px;pointer-events:auto}.prayer-wall>b{display:block;color:#e8d5ae;margin-bottom:7px}.prayer-entry{padding:5px 0;border-top:1px solid #ffffff18;color:#d9e0e5;line-height:1.4}
+@media(max-width:700px){.profile-pill{top:146px;right:12px}.prayer-wall{top:184px;left:12px;width:155px;max-height:100px}.action-bar{top:auto;bottom:245px;right:10px;max-width:42vw}.action-bar button{padding:7px 8px;font-size:13px}.action-bar button span{font-size:9px}}
+
+.auth-tabs{display:flex;gap:6px;margin:0 0 18px;padding:4px;border-radius:10px;background:#0b151f}.auth-tabs button{flex:1;margin:0;padding:9px;background:transparent;color:#aeb9c2;border-radius:7px;font-size:12px}.auth-tabs button.selected{background:#c8b184;color:#1c2023}
+#register-fields{margin-top:12px;text-align:left}#register-fields label{margin-top:10px}#avatar-color{height:40px;padding:4px}.auth-error{min-height:16px;margin:0 0 8px;color:#ff9b91;font-size:11px}
+.profile-pill{position:absolute;top:122px;right:16px;background:#101e2bc9;border:1px solid #ffffff26;border-radius:10px;padding:7px 9px;font-size:10px;pointer-events:auto}.profile-pill button{margin-left:8px;background:transparent;color:#e8c98b;font-size:10px}
+.prayer-wall{position:absolute;left:16px;top:165px;width:190px;max-height:170px;overflow:auto;padding:10px;border-radius:11px;background:#101e2bc9;border:1px solid #ffffff26;font-size:10px;pointer-events:auto}.prayer-wall>b{display:block;color:#e8d5ae;margin-bottom:7px}.prayer-entry{padding:5px 0;border-top:1px solid #ffffff18;color:#d9e0e5;line-height:1.4}
+@media(max-width:700px){.profile-pill{top:146px;right:12px}.prayer-wall{top:184px;left:12px;width:155px;max-height:100px}.action-bar{top:auto;bottom:245px;right:10px;max-width:42vw}.action-bar button{padding:7px 8px;font-size:13px}.action-bar button span{font-size:9px}}
+
+.profile-pill input[type=color]{width:22px;height:22px;padding:0;border:0;background:transparent;vertical-align:middle;margin-left:7px}.profile-pill button{margin-left:5px}.action-bar{max-width:min(70vw,680px);flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){.profile-pill{display:flex;align-items:center;gap:3px}.profile-pill input[type=color]{width:20px;height:20px}.profile-pill button{font-size:9px;margin-left:2px}.action-bar{max-height:48vh;max-width:48vw}}
+
+.mass-banner{position:absolute;top:118px;left:50%;transform:translateX(-50%);padding:9px 16px;border:1px solid #d9bd7a77;border-radius:30px;background:#30291cdb;color:#f1dfb6;font-size:11px;letter-spacing:.04em;opacity:0;transition:opacity .3s;white-space:nowrap}.mass-banner.active{opacity:1}
+@media(max-width:700px){.mass-banner{top:92px;font-size:9px;padding:7px 10px}.candle-counter{top:126px}}
+
+/* v5 additional community panels */
+.floating-panel{position:absolute;z-index:8;top:180px;left:50%;transform:translateX(-50%);width:min(92vw,390px);max-height:55vh;overflow:auto;padding:14px;border:1px solid #ffffff35;border-radius:15px;background:#0b1723ed;box-shadow:0 18px 55px #0009;pointer-events:auto;backdrop-filter:blur(14px)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;color:#e7d5ad;font-size:13px;font-weight:800;margin-bottom:10px}.panel-head button{background:transparent;color:#fff;font-size:20px;padding:0 6px}
+#spaces-panel>button{display:block;width:100%;text-align:left;margin:6px 0;padding:12px;border-radius:9px;background:#1b2c3a;color:#f4eee2;border:1px solid #ffffff18;font-size:12px}
+.admin-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:10px 0}.admin-stats div{padding:10px;border-radius:9px;background:#1b2c3a;color:#bdc8d0;font-size:11px}.admin-stats b{display:block;color:#f1d7a2;font-size:19px;margin-top:4px}
+.admin-user{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 2px;border-top:1px solid #ffffff18;font-size:10px;color:#e0e6eb}.admin-user span{overflow-wrap:anywhere}.admin-user button{flex-shrink:0;background:#c8b184;color:#18222b;border-radius:7px;padding:6px 8px;font-size:10px;font-weight:700}
+@media(max-width:700px){.floating-panel{top:160px;max-height:48vh}.admin-user{font-size:9px}.admin-user button{font-size:9px}}
+
+/* v6 community prayer intention composer */
+#prayer-form{display:flex;gap:6px;margin-top:9px}
+#prayer-input{min-width:0;flex:1;width:100%;border:1px solid rgba(230,220,200,.2);border-radius:8px;background:rgba(8,16,24,.72);color:#f5f0e7;padding:8px;font:inherit;font-size:12px}
+#prayer-form button{border:0;border-radius:8px;padding:7px 10px;background:#b99a5c;color:#18202a;font-weight:700;cursor:pointer}
+
+/* v7 guided liturgy controls and live phase banner */
+.mass-banner{display:none;position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:8;max-width:min(560px,92vw);padding:12px 18px;border:1px solid rgba(211,181,120,.48);border-radius:13px;background:rgba(18,29,39,.94);color:#f4e8cf;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.25)}
+.mass-banner.active{display:flex;flex-direction:column;gap:4px}
+.mass-banner b{font-size:12px;letter-spacing:.12em;color:#d9bb7e}
+.mass-banner span{font-size:17px;font-weight:750}
+.mass-banner small{font-size:12px;color:#d4d9dc}
+.panel-note{font-size:12px;line-height:1.6;color:#bfc8cf}
+.mass-phase-buttons{display:grid;grid-template-columns:1fr;gap:7px}
+.mass-phase-buttons button{padding:11px;border:1px solid rgba(220,205,170,.22);border-radius:9px;background:#253441;color:#f4ead5;text-align:left;cursor:pointer}
+.mass-phase-buttons button:active{background:#806d4d}
+@media(max-width:700px){.mass-banner{top:66px}.mass-banner span{font-size:15px}}
+
+/* v8 friends, private messaging and video broadcast */
+#friend-add-form,#dm-form{display:flex;gap:6px;margin:8px 0}
+#friend-add-form input,#dm-form input,.stream-host-controls input{flex:1;min-width:0;padding:9px;border:1px solid rgba(220,205,170,.22);border-radius:8px;background:#172633;color:#f4ead5}
+#friend-add-form button,#dm-form button,.friend-row button,.stream-host-controls button{border:0;border-radius:8px;padding:8px 10px;background:#b99a5c;color:#172633;font-weight:700}
+.friend-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px}
+.friend-row{display:flex;align-items:center;gap:6px;margin:6px 0;padding:7px;border-radius:8px;background:rgba(255,255,255,.06);color:#f2eadc}
+.friend-row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.friend-open{width:100%;text-align:left;border:0;cursor:pointer}
+.dm-box{margin-top:12px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px}
+#dm-log{height:150px;overflow:auto;margin:8px 0;padding:7px;background:rgba(0,0,0,.18);border-radius:8px}
+.dm-line{display:flex;gap:8px;margin:5px 0;font-size:12px}.dm-line b{color:#d9bb7e}.dm-line span{overflow-wrap:anywhere}.dm-line.mine{justify-content:flex-end}
+#stream-player-wrap{display:grid;gap:8px;color:#e8e0d2;font-size:13px}
+#stream-player-wrap iframe{width:min(100%,560px);aspect-ratio:16/9;border:0;border-radius:10px;background:#080d12}
+.stream-host-controls{display:grid;gap:7px;margin-top:12px}
+@media(max-width:700px){.friend-columns{grid-template-columns:1fr}.floating-panel{max-width:94vw}}
+
+/* v8.0.1 login click reliability */
+#loading{display:none!important;pointer-events:none!important}
+#join-screen{z-index:1000;pointer-events:auto}
+#join-screen .join-card,#join-screen button,#join-screen input{pointer-events:auto}
+
+/* v8.0.5 avatar outfit selector */
+.profile-pill select{max-width:92px;margin:0 4px;padding:5px 6px;border:1px solid rgba(255,255,255,.22);border-radius:7px;background:#172633;color:#f4ead5;font-size:10px}
+@media(max-width:700px){.profile-pill select{max-width:78px;font-size:9px;padding:4px}}
+
+/* v8.2.4 authentication click reliability */
+#join-screen { z-index: 10000 !important; pointer-events: auto !important; }
+#join-screen .join-card { position: relative; z-index: 10001; pointer-events: auto !important; }
+#join-screen .join-card * { pointer-events: auto; }
+#join-screen #enter-btn {
+  position: relative; z-index: 10002; display: block; width: 100%;
+  min-height: 50px; touch-action: manipulation; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+#join-screen #enter-btn:disabled { opacity: .72; cursor: wait; }
+#join-screen .auth-tabs button { position: relative; z-index: 10002; touch-action: manipulation; }
+
+/* v8.3.2 harden authentication button hit target */
+#join-screen, #join-screen .join-card {
+  pointer-events: auto !important;
+}
+#join-screen .join-card {
+  position: relative !important;
+  z-index: 100001 !important;
+}
+#join-screen #enter-btn {
+  position: relative !important;
+  z-index: 100002 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* v8.4.0 interactive parish youth room */
+#youth-room-panel{width:min(420px,calc(100vw - 28px));max-height:min(75vh,680px);overflow:auto}
+.youth-room-tabs{display:flex;gap:6px;margin:10px 0}
+.youth-room-tabs button,.youth-rps-buttons button{flex:1;border:1px solid #52606a;border-radius:9px;background:#14212b;color:#e9e3d8;padding:9px;cursor:pointer}
+.youth-room-tabs button.selected{background:#cbb38a;color:#17202a}
+.youth-chat-log{height:190px;overflow:auto;border:1px solid #34414b;border-radius:8px;padding:8px;margin-bottom:8px}
+#youth-chat-form,#youth-agenda-form{display:flex;gap:6px}
+#youth-chat-form input,#youth-agenda-form input{min-width:0;flex:1}
+#youth-chat-form button,#youth-agenda-form button,.youth-agenda-item button{background:#cbb38a;color:#1c2024;border:0;border-radius:7px;padding:8px 10px}
+.youth-agenda-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px;margin:6px 0;border:1px solid #34414b;border-radius:8px;color:#eee}
+.youth-agenda-item span{overflow-wrap:anywhere}
+.youth-rps-buttons{display:flex;gap:7px;margin:12px 0}
+.youth-game-status{padding:12px;border-radius:8px;background:#111c25;color:#e5d4b3;text-align:center;min-height:42px}
+#youth-online-count{font-size:12px;color:#cbb38a;margin-left:auto;margin-right:12px}
+@media(max-width:650px){#youth-room-panel{left:10px;right:10px;bottom:75px;width:auto}.youth-chat-log{height:145px}}
+
+/* v8.5.0 youth room activities */
+.youth-form{display:grid;gap:7px;margin:10px 0}
+.youth-form input{width:100%;min-width:0}
+.youth-form button,#youth-group-leave,#youth-ttt-reset{border:0;border-radius:8px;padding:9px 12px;background:#cbb38a;color:#18212a;cursor:pointer}
+.youth-list{display:grid;gap:6px;margin:10px 0;max-height:220px;overflow:auto}
+.youth-movie-player{background:#0b1219;border:1px solid #3d4a55;border-radius:10px;padding:10px;color:#e9e3d8}
+.youth-movie-player iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:7px}
+.youth-movie-player p{margin:4px 0 10px}
+.youth-ttt-board{display:grid;grid-template-columns:repeat(3,64px);gap:5px;justify-content:center;margin:12px auto}
+.youth-ttt-board button{height:58px;border:1px solid #65727d;border-radius:8px;background:#172632;color:#e8d6b3;font-size:24px;font-weight:700}
+.youth-ttt-board button:disabled{opacity:.85}
+@media(max-width:650px){.youth-ttt-board{grid-template-columns:repeat(3,56px)}.youth-ttt-board button{height:52px}}
+
+/* v8.6.0 private small-group rooms and video meeting */
+.youth-group-room{margin:12px 0;padding:12px;border:1px solid #596674;border-radius:12px;background:rgba(9,18,27,.88)}
+.youth-group-room h4{margin:2px 0 10px;color:#e8d4ae}
+#youth-group-chat-form{display:flex;gap:6px;margin:8px 0 12px}
+#youth-group-chat-form input{min-width:0;flex:1}
+#youth-group-chat-form button{border:0;border-radius:7px;padding:8px 12px;background:#cbb38a;color:#17212a}
+.youth-video-controls{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.youth-video-controls button{border:1px solid #6c7881;border-radius:8px;padding:8px 10px;background:#182834;color:#f0e8dc}
+.youth-video-controls button:disabled{opacity:.5}
+.youth-video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.youth-video-tile{position:relative;min-width:0;background:#05090d;border:1px solid #46535e;border-radius:9px;overflow:hidden;aspect-ratio:4/3}
+.youth-video-tile video{width:100%;height:100%;object-fit:cover}
+.youth-video-tile span{position:absolute;left:6px;bottom:6px;padding:3px 7px;border-radius:6px;background:rgba(0,0,0,.7);color:white;font-size:12px}
+@media(max-width:560px){.youth-video-grid{grid-template-columns:1fr}}
+
+/* v8.7.0 group leader, screen sharing and presentation materials */
+.youth-group-role{margin:10px 0;padding:8px 10px;border-radius:8px;background:#263746;color:#e8d4ae;font-weight:700}
+.youth-leader-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0;padding:9px;background:#111c25;border-radius:8px}
+.youth-leader-tools label{display:flex;align-items:center;gap:6px;flex:1;min-width:150px;color:#e6e0d5;font-size:12px}
+.youth-leader-tools select{min-width:0;flex:1;max-width:180px}
+.youth-leader-tools button,.youth-presentation-tools button{border:0;border-radius:7px;padding:8px 10px;background:#cbb38a;color:#18212a}
+.youth-video-controls button:disabled,.youth-presentation-tools button:disabled{opacity:.45;cursor:not-allowed}
+.youth-presentation-tools{display:grid;gap:8px;margin:12px 0;padding:10px;border:1px solid #53616d;border-radius:10px;background:#101b24}
+.youth-presentation-tools label{font-size:12px;color:#e4d6bd;font-weight:700}
+.youth-presentation-tools input{max-width:100%;color:#dce4e9;font-size:12px}
+.youth-presentation-view{min-height:54px;max-height:380px;overflow:auto;border-radius:8px;background:#070d12;padding:8px;color:#d6dce1}
+.youth-presentation-view p{margin:2px 0 8px;font-size:12px;color:#e7d4b0}
+.youth-presentation-view img{display:block;max-width:100%;max-height:320px;margin:auto;object-fit:contain}
+.youth-presentation-frame{display:block;width:100%;height:330px;border:0;background:white;border-radius:6px}
+#youth-screen-stop{border-color:#bd9870}
+
+/* v8.8.0 attendance, recording, presenter pointer and hand raise */
+.youth-meeting-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:9px 0;padding:9px;border:1px solid #495967;border-radius:9px;background:#111e28}
+.youth-meeting-tools button,.youth-attendance-heading button{border:0;border-radius:7px;padding:8px 11px;background:#cbb38a;color:#18212a;cursor:pointer}
+#youth-hands-status{font-size:12px;color:#e7d6b7}
+.youth-attendance-section{margin:10px 0;padding:10px;border:1px solid #53616d;border-radius:9px;background:#101b24}
+.youth-attendance-heading{display:flex;align-items:center;gap:7px;margin-bottom:8px;color:#ead9ba}
+.youth-attendance-heading strong{margin-right:auto}
+.youth-attendance-heading button{font-size:11px;padding:6px 8px}
+.youth-attendance-row{display:flex;justify-content:space-between;gap:8px;padding:7px 3px;border-bottom:1px solid #34414b;color:#e7e7e7;font-size:12px}
+.youth-attendance-row small{color:#aebbc5;white-space:nowrap}
+.youth-recording-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:9px 0;padding:9px;border:1px solid #554d3f;border-radius:9px;background:#171b1d}
+.youth-recording-controls button{border:0;border-radius:7px;padding:8px 10px;background:#cbb38a;color:#18212a}
+.youth-recording-controls button:disabled{opacity:.45}
+#youth-record-status{font-size:11px;color:#dfc99e}
+.youth-presentation-view{position:relative}
+.youth-presenter-pointer{position:absolute;z-index:5;width:18px;height:18px;border:3px solid #fff;border-radius:50%;background:#ed4b39;box-shadow:0 0 0 2px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none}
+
+/* v9.0.0 attendance dashboard and recording archive */
+.youth-attendance-dashboard{margin-top:12px;padding:10px;border-radius:9px;background:#182b37;color:#e6d4b2;font-size:12px}
+.youth-attendance-dashboard strong{display:block;margin-bottom:7px}
+.youth-attendance-dashboard p{margin:5px 0;color:#d5dfe5}
+.youth-recording-library{margin:12px 0;padding:10px;border:1px solid #53616d;border-radius:10px;background:#101b24}
+.youth-recording-item{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 2px;border-bottom:1px solid #34414b;color:#e8e8e8}
+.youth-recording-item>div{flex:1;min-width:130px;display:grid;gap:4px}
+.youth-recording-item strong{font-size:12px}
+.youth-recording-item small{font-size:10px;color:#aebbc5}
+.youth-recording-item button{border:0;border-radius:7px;padding:7px 9px;background:#cbb38a;color:#18212a;font-size:11px}
+.youth-recording-item .youth-archive-player{width:100%;max-height:300px;background:#000;border-radius:8px}
+#youth-record-upload{background:#4c806d;color:#fff}
+#youth-record-upload:disabled{opacity:.45}
+
+/* v9.1.0 community calendar, booking and member administration */
+.youth-community-portal{margin:10px 0;padding:11px;border:1px solid #52616c;border-radius:12px;background:rgba(14,25,34,.94);color:#edf0f2}
+.youth-portal-heading,.youth-calendar-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:5px 0 9px}
+.youth-portal-heading strong{font-size:13px}
+.youth-portal-list{display:grid;gap:7px;margin:7px 0}
+.youth-portal-card{padding:9px;border-radius:8px;background:#1c303d;display:grid;gap:5px}
+.youth-portal-card strong{font-size:13px;color:#f2d9a8}
+.youth-portal-card p{font-size:12px;white-space:pre-wrap;margin:2px 0;color:#d5e0e7}
+.youth-portal-card small,.youth-portal-list small{font-size:10px;color:#aebdc6}
+.youth-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin:8px 0}
+.youth-calendar-day-name{text-align:center;font-size:10px;color:#cdb58e;padding:4px}
+.youth-calendar-blank{min-height:47px}
+.youth-calendar-cell{min-height:47px;padding:4px;border-radius:5px;background:#1b2a34;overflow:hidden}
+.youth-calendar-cell b{font-size:11px}
+.youth-calendar-cell small{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f0ce8b}
+.youth-admin-tools{margin-top:10px;padding:9px;border:1px solid #53616d;border-radius:9px}
+.youth-admin-tools details{margin:7px 0}
+.youth-admin-tools summary{padding:7px;color:#f1d8a9;font-size:12px}
+.youth-portal-form{display:grid;gap:7px;margin:8px 0}
+.youth-portal-form input,.youth-portal-form textarea{width:100%;min-width:0;padding:8px;border-radius:6px;border:1px solid #657783;background:#101b23;color:#fff;font:inherit;font-size:12px}
+.youth-portal-form textarea{min-height:60px}
+.youth-member-admin-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid #42515a}
+.youth-member-admin-row span{flex:1;min-width:150px;font-size:10px;overflow-wrap:anywhere}
+.youth-member-admin-row select{max-width:90px;background:#172631;color:#fff;padding:5px}
+.youth-member-admin-row button{font-size:10px;padding:6px}
+#youth-member-activity{margin-top:10px;padding:8px;background:#192b36;border-radius:8px;font-size:11px}
+#youth-member-activity p{margin:5px 0}
+
+/* v9.2.0 check-in, push notifications, finance and integrated admin dashboard */
+.youth-admin-dashboard{margin:10px 0;padding:12px;border:1px solid #bda77e;border-radius:11px;background:#172b37;color:#f4ead8}
+.youth-admin-dashboard>strong{display:block;margin-bottom:9px;color:#f4d7a3}
+.youth-admin-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.youth-admin-metrics>div{display:grid;gap:3px;padding:9px;border-radius:8px;background:#243d4b}
+.youth-admin-metrics b{font-size:15px;color:#fff}
+.youth-admin-metrics small{font-size:10px;color:#c4d0d7}
+.youth-admin-dashboard p,.youth-finance-lists p{font-size:11px;margin:6px 0;color:#d8e1e6}
+.youth-finance-lists{margin-top:10px}
+.youth-finance-lists strong{display:block;margin:9px 0;color:#f0d6a6}
+.youth-finance-lists p{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.youth-finance-lists button{padding:4px 7px;font-size:10px}
+.youth-checkin-result{padding:7px;color:#f5dcae;font-size:12px}
+.youth-qr-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}
+.youth-qr-card{width:min(340px,100%);padding:18px;border-radius:14px;background:#f8f5ef;color:#17212a;display:grid;justify-items:center;gap:10px;text-align:center}
+.youth-qr-card img{width:260px;max-width:100%;height:auto;background:white}
+.youth-qr-card p{font-size:12px;line-height:1.5}
+.youth-qr-card button{padding:9px 22px;background:#263e4d;color:white;border-radius:8px}
+#youth-push-enable{font-size:10px}
+
+/* v9.3.0 member profile, photo, direct messages and polls */
+.profile-avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid #c7ae82;background:#263b49}
+#profile-bio{width:125px;max-width:25vw;padding:5px;border-radius:6px;border:1px solid #697984;background:#172631;color:#fff;font-size:10px}
+#profile-avatar-upload{font-size:10px;padding:5px 8px}
+.youth-poll-choice{display:flex;align-items:center;gap:8px;padding:8px;border-radius:7px;background:#253b48;color:#e9edf0;font-size:12px}
+.youth-poll-choice input{accent-color:#d2b786}
+.youth-poll-choice span{flex:1}
+#youth-polls-list .youth-portal-card>button{justify-self:start}
+#dm-log{max-height:260px;overflow:auto}
+
+/* v9.4.0 community portal */
+.youth-community-tools{display:grid;gap:10px;margin:12px 0}
+.youth-community-list{display:grid;gap:9px;max-height:360px;overflow:auto}
+.youth-community-card{background:#0d1924;border:1px solid #ffffff1c;border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0}
+.youth-community-card img{width:100%;max-height:230px;object-fit:cover;border-radius:9px;background:#172635}
+.youth-community-card p{white-space:pre-wrap;overflow-wrap:anywhere;margin:2px 0;color:#dce4ea;font-size:13px}
+.youth-community-card small{color:#9eacb8;font-size:10px}
+.youth-comments{display:grid;gap:3px;border-top:1px solid #ffffff18;padding-top:6px}
+.youth-comments p{font-size:11px;color:#c4d0d9;margin:2px 0}
+.youth-inline-form{display:flex;gap:6px}
+.youth-inline-form input{min-width:0;flex:1}
+.youth-inline-form button,.youth-pending-row button{padding:8px 10px;border-radius:8px;background:#c8b184;color:#1c2023;font-weight:700}
+.youth-community-tools .youth-portal-form{display:grid;gap:7px}
+.youth-community-tools .youth-portal-form input,.youth-community-tools .youth-portal-form textarea{width:100%;padding:10px;border:1px solid #ffffff25;border-radius:8px;background:#0b151f;color:#fff}
+.youth-community-tools .youth-portal-form button{padding:10px;border-radius:8px;background:#c8b184;color:#1c2023;font-weight:700}
+.youth-community-tools label{display:grid;gap:5px;color:#cbd4dc;font-size:12px}
+.youth-pending-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #ffffff18;font-size:11px}
+.youth-pending-row span{flex:1;overflow-wrap:anywhere}
+
+.youth-quick-qr{display:grid;gap:8px;padding:10px;margin:10px 0;border:1px solid #c8b18466;border-radius:10px;background:#172431}
+.youth-quick-qr small{color:#aebbc5;font-size:11px;line-height:1.5}
+.youth-quick-qr .youth-portal-form{display:grid;gap:8px}
+.youth-quick-qr input{width:100%;padding:10px;border:1px solid #ffffff25;border-radius:8px;background:#0b151f;color:#fff}
+.youth-quick-qr button{padding:10px;border-radius:8px;background:#c8b184;color:#1c2023;font-weight:700}
+
+/* v9.4.3: 정돈된 접이식 메뉴 */
+.action-bar{position:absolute;top:78px;right:16px;display:block;pointer-events:auto;z-index:12}
+.action-menu-toggle{display:flex;align-items:center;gap:7px;background:rgba(13,27,39,.92)!important;border:1px solid #d7c49b66!important;border-radius:12px!important;color:#f4ead8!important;padding:11px 15px!important;font-size:15px!important;box-shadow:0 5px 18px #0004;backdrop-filter:blur(12px)}
+.action-menu-toggle span{font-size:12px!important;font-weight:700}
+.action-menu{position:absolute;top:48px;right:0;width:min(310px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:auto;padding:12px;border:1px solid #ffffff28;border-radius:16px;background:rgba(10,22,32,.96);box-shadow:0 16px 45px #0008;backdrop-filter:blur(18px);pointer-events:auto}
+.action-menu-head{display:flex;align-items:center;justify-content:space-between;padding:2px 3px 10px;border-bottom:1px solid #ffffff1a;margin-bottom:7px;color:#e8d8b7;font-size:13px}
+.action-menu-head button{background:transparent;color:#fff;font-size:22px;padding:0 6px}
+.action-group{border-bottom:1px solid #ffffff16;padding:8px 2px}
+.action-group:last-child{border-bottom:0}
+.action-group summary{cursor:pointer;list-style:none;color:#e5eaf0;font-size:12px;font-weight:700;padding:5px 4px}
+.action-group summary::-webkit-details-marker{display:none}
+.action-group summary:after{content:"＋";float:right;color:#bda87e}
+.action-group[open] summary:after{content:"−"}
+.action-group-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-top:8px}
+.action-group-buttons button{min-height:42px;display:flex;align-items:center;justify-content:center;gap:5px;background:#1b2b39;border:1px solid #ffffff16;border-radius:9px;color:#f4f5f6;padding:8px 5px;font-size:15px}
+.action-group-buttons button:active{background:#354657}
+.action-group-buttons button span{font-size:10px;margin:0}
+@media(max-width:700px){
+ .action-bar{top:72px;right:10px}
+ .action-menu{max-height:65vh}
+ .location-pill{top:76px;left:10px;transform:none;max-width:calc(100vw - 100px);overflow:hidden;text-overflow:ellipsis}
+}
+
+/* v9.4.4 iPhone / PWA responsive layout */
+html,body{min-height:100%;min-height:100dvh;overscroll-behavior:none}
+body{-webkit-text-size-adjust:100%;-webkit-touch-callout:none}
+button,input,textarea,select{touch-action:manipulation}
+canvas{touch-action:none}
+#hud{inset:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0}
+@media(max-width:700px){
+  .topbar{padding-top:max(9px,env(safe-area-inset-top));height:calc(54px + env(safe-area-inset-top))}
+  .brand b{font-size:11px}.brand small{font-size:8px}
+  .online{font-size:10px;padding:6px 9px}
+  .location-pill{top:calc(61px + env(safe-area-inset-top));font-size:9px;padding:6px 10px}
+  .action-bar{top:calc(61px + env(safe-area-inset-top));right:10px;bottom:auto;max-width:none;z-index:30}
+  .action-menu-toggle{min-height:42px;padding:9px 12px!important}
+  .action-menu{top:46px;right:0;max-height:calc(70dvh - env(safe-area-inset-top));width:min(300px,calc(100vw - 20px))}
+  .profile-pill{top:calc(108px + env(safe-area-inset-top));left:10px;right:auto;max-width:calc(100vw - 20px);display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px}
+  .profile-pill #profile-name{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #profile-bio{display:none}
+  .profile-pill select{max-width:72px}
+  .prayer-wall{display:none}
+  .candle-counter{top:calc(154px + env(safe-area-inset-top));left:10px;padding:6px 8px;font-size:9px}
+  #mass-banner{top:calc(62px + env(safe-area-inset-top));max-width:calc(100vw - 24px);white-space:normal}
+  #chat-panel{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;height:clamp(112px,19dvh,160px);z-index:5}
+  #chat-panel.collapsed{height:38px}
+  #chat-log{font-size:10px}
+  #chat-form button{min-width:48px}
+  #joystick{left:14px;bottom:calc(26px + env(safe-area-inset-bottom));width:104px;height:104px;z-index:4}
+  #stick{left:31px;top:31px;width:40px;height:40px}
+  .mobile-hint{bottom:calc(8px + env(safe-area-inset-bottom));font-size:8px}
+  #minimap{right:10px;bottom:calc(165px + env(safe-area-inset-bottom));width:72px;height:72px}
+  .interaction-hint{bottom:calc(145px + env(safe-area-inset-bottom));max-width:85vw;text-align:center}
+  .floating-panel{top:calc(112px + env(safe-area-inset-top));bottom:calc(12px + env(safe-area-inset-bottom));max-height:none;width:calc(100vw - 20px);padding:12px;overflow:auto}
+  #youth-room-panel{left:10px;right:10px;top:calc(104px + env(safe-area-inset-top));bottom:calc(10px + env(safe-area-inset-bottom));width:auto;max-height:none}
+  .join-card{width:min(92vw,420px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);overflow:auto;padding:25px 21px}
+  .join-card input{font-size:16px}
+}
+@media(max-width:390px){
+  .profile-pill{max-width:calc(100vw - 16px);left:8px}
+  #profile-outfit{max-width:64px}
+  .action-menu{width:min(280px,calc(100vw - 16px))}
+  .action-group-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
