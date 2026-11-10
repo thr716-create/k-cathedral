@@ -1,222 +1,4 @@
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const fs = require("fs");
-const crypto = require("crypto");
-require("dotenv").config();
-const { Server } = require("socket.io");
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true }, maxHttpBufferSize: 8 * 1024 * 1024 });
-const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, "data.json");
-app.use(express.json({ limit: "5mb" }));
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/vendor/three", express.static(path.join(__dirname, "node_modules/three/build")));
-app.get("/healthz", (req,res)=>res.status(200).json({ok:true,service:"k-cathedral"}));
-
-function loadDB() {
-  try { return JSON.parse(fs.readFileSync(DB_FILE, "utf8")); }
-  catch { return { users: {}, sessions: {}, candleCount: 0, prayerWall: [] }; }
-}
-const db = loadDB();
-if (!Array.isArray(db.meetingRecordings)) db.meetingRecordings=[];
-if (!Array.isArray(db.youthEvents)) db.youthEvents=[];
-if (!Array.isArray(db.youthBookings)) db.youthBookings=[];
-if (!Array.isArray(db.youthAnnouncements)) db.youthAnnouncements=[];
-if (!Array.isArray(db.memberActivity)) db.memberActivity=[];
-if (!Array.isArray(db.qrAttendance)) db.qrAttendance=[];
-if (!Array.isArray(db.qrTokens)) db.qrTokens=[];
-if (!Array.isArray(db.feePayments)) db.feePayments=[];
-if (!Array.isArray(db.feeExpenses)) db.feeExpenses=[];
-if (!Array.isArray(db.pushSubscriptions)) db.pushSubscriptions=[];
-if (!Array.isArray(db.youthPolls)) db.youthPolls=[];
-if (!Array.isArray(db.youthAlbum)) db.youthAlbum=[];
-if (!Array.isArray(db.youthBoard)) db.youthBoard=[];
-if (!Array.isArray(db.youthBirthdays)) db.youthBirthdays=[];
-if (!Array.isArray(db.youthChatHistory)) db.youthChatHistory=[];
-for (const u of Object.values(db.users)) { if (u.approved === undefined) u.approved = true; }
-if (!db.sessions) db.sessions = {};
-for (const u of Object.values(db.users)) {
-  if (!Array.isArray(u.friends)) u.friends=[];
-  if (!Array.isArray(u.friendRequests)) u.friendRequests=[];
-}
-if (!Array.isArray(db.messages)) db.messages=[];
-if (Object.keys(db.users).length && !Object.values(db.users).some(u => u.role === "admin")) { const first = Object.values(db.users)[0]; first.role = "admin"; try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch {} }
-const sessions = new Map(Object.entries(db.sessions || {}));
-const requestBuckets = new Map();
-function rateLimit(key, limit=12, windowMs=60000) {
-  const now=Date.now(); const item=requestBuckets.get(key);
-  if(!item || now-item.start>windowMs){requestBuckets.set(key,{start:now,count:1});return true;}
-  item.count++; return item.count<=limit;
-}
-app.use("/api", (req,res,next)=>{
-  const key=(req.ip||req.socket.remoteAddress||"unknown")+":"+req.path;
-  if(!rateLimit(key, req.path==="/login"||req.path==="/register"?8:60)) return res.status(429).json({error:"요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."});
-  next();
-});
-const players = new Map();
-let massMode = false;
-const massPhases = [
-  {id:"entrance",title:"입당 예식",detail:"모두 자리에서 경건하게 미사를 시작합니다."},
-  {id:"word",title:"말씀 전례",detail:"성경 말씀을 함께 읽고 묵상합니다."},
-  {id:"homily",title:"강론",detail:"말씀의 의미를 되새기는 시간입니다."},
-  {id:"prayers",title:"보편 지향 기도",detail:"공동체와 세상을 위해 함께 기도합니다."},
-  {id:"closing",title:"마침 예식",detail:"평화로운 마음으로 일상에 돌아갑니다."}
-];
-let massPhaseIndex = 0;
-
-function saveDB() {
-  const temp = DB_FILE + ".tmp";
-  fs.writeFileSync(temp, JSON.stringify(db, null, 2));
-  fs.renameSync(temp, DB_FILE);
-}
-function cleanName(value) {
-  const name = String(value || "순례자").replace(/[<>]/g, "").trim().slice(0, 14);
-  return name || "순례자";
-}
-function cleanEmail(value) { return String(value || "").trim().toLowerCase().slice(0, 120); }
-function validPassword(p) { return typeof p === "string" && p.length >= 8 && p.length <= 72; }
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return { salt, hash };
-}
-function authUser(req) {
-  const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  const email = sessions.get(token);
-  return email && db.users[email]?.approved !== false ? db.users[email] : null;
-}
-function publicProfile(user) {
-  return { email: user.email, name: user.name, color: user.color, outfit: user.outfit || "casual", role: user.role || "member", createdAt: user.createdAt, bio:user.bio||"",avatar:user.avatar||"" };
-}
-function authAdmin(req) { const user = authUser(req); return user && user.role === "admin" ? user : null; }
-app.post("/api/register", (req, res) => {
-  const email = cleanEmail(req.body.email), password = req.body.password;
-  const name = cleanName(req.body.name);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "올바른 이메일 주소를 입력해 주세요." });
-  if (!validPassword(password)) return res.status(400).json({ error: "비밀번호는 8~72자로 입력해 주세요." });
-  if (db.users[email]) return res.status(409).json({ error: "이미 가입된 이메일입니다." });
-  const secret = hashPassword(password);
-  const user = { email, name, color: /^#[0-9a-fA-F]{6}$/.test(req.body.color) ? req.body.color : "#b9c9e8", outfit: "casual",
-    role: Object.keys(db.users).length === 0 ? "admin" : "member",
-    approved: Object.keys(db.users).length === 0,
-    salt: secret.salt, passwordHash: secret.hash, createdAt: new Date().toISOString(), prayers: 0 };
-  db.users[email] = user; saveDB();
-  const token = crypto.randomBytes(32).toString("hex"); sessions.set(token, email); db.sessions[token]=email; saveDB();
-  res.json({ token, profile: publicProfile(user) });
-});
-app.post("/api/login", (req, res) => {
-  const email = cleanEmail(req.body.email), user = db.users[email];
-  if (!user || typeof req.body.password !== "string") return res.status(401).json({ error: "이메일 또는 비밀번호를 확인해 주세요." });
-  const hash = crypto.scryptSync(req.body.password, user.salt, 64).toString("hex");
-  const a = Buffer.from(hash, "hex"), b = Buffer.from(user.passwordHash, "hex");
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).json({ error: "이메일 또는 비밀번호를 확인해 주세요." });
-  if (user.approved === false) return res.status(403).json({ error: "관리자 승인 대기 중입니다. 승인 후 로그인할 수 있습니다." });
-  const token = crypto.randomBytes(32).toString("hex"); sessions.set(token, email); db.sessions[token]=email; saveDB();
-  res.json({ token, profile: publicProfile(user) });
-});
-const RECORDING_DIR=path.join(DATA_DIR,"recordings");
-fs.mkdirSync(RECORDING_DIR,{recursive:true});
-let s3Client=null, s3Commands=null;
-function cloudRecordingEnabled(){return !!(process.env.S3_BUCKET&&process.env.S3_REGION&&process.env.S3_ACCESS_KEY_ID&&process.env.S3_SECRET_ACCESS_KEY);}
-function getS3(){
-  if(!cloudRecordingEnabled())return null;
-  if(!s3Client){
-    const {S3Client,PutObjectCommand,GetObjectCommand,DeleteObjectCommand}=require("@aws-sdk/client-s3");
-    s3Client=new S3Client({region:process.env.S3_REGION,endpoint:process.env.S3_ENDPOINT||undefined,forcePathStyle:process.env.S3_FORCE_PATH_STYLE==="true",credentials:{accessKeyId:process.env.S3_ACCESS_KEY_ID,secretAccessKey:process.env.S3_SECRET_ACCESS_KEY}});
-    s3Commands={PutObjectCommand,GetObjectCommand,DeleteObjectCommand};
-  }
-  return s3Client;
-}
-function safeRecordingName(v){return String(v||"회의 녹화").replace(/[\\\\/:*?"<>|]/g,"_").slice(0,100)||"회의 녹화";}
-function canViewRecording(user,record){return user&&(user.role==="admin"||record.ownerEmail===user.email||record.groupId&&record.groupMembers?.includes(user.email));}
-let webPush=null;
-function getWebPush(){if(!webPush)webPush=require("web-push");return webPush;}
-function vapidConfigured(){return !!(process.env.VAPID_PUBLIC_KEY&&process.env.VAPID_PRIVATE_KEY);}
-function pushNotify(payload){
-  if(!vapidConfigured())return;
-  try{
-    const wp=getWebPush();wp.setVapidDetails(process.env.VAPID_SUBJECT||"mailto:admin@example.com",process.env.VAPID_PUBLIC_KEY,process.env.VAPID_PRIVATE_KEY);
-    for(const item of db.pushSubscriptions)wp.sendNotification(item.subscription,JSON.stringify(payload)).catch(err=>{
-      if(err.statusCode===404||err.statusCode===410){db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.endpoint!==item.endpoint);saveDB();}
-    });
-  }catch(err){console.error("Push notification error:",err.message);}
-}
-app.get("/api/push/key",(req,res)=>res.json({publicKey:process.env.VAPID_PUBLIC_KEY||null}));
-app.post("/api/push/subscribe",(req,res)=>{
-  const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
-  const sub=req.body.subscription;if(!sub?.endpoint||!sub?.keys?.p256dh||!sub?.keys?.auth)return res.status(400).json({error:"유효하지 않은 푸시 구독입니다."});
-  db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.endpoint!==sub.endpoint);
-  db.pushSubscriptions.push({email:user.email,endpoint:sub.endpoint,subscription:sub,createdAt:Date.now()});saveDB();res.json({ok:true,enabled:vapidConfigured()});
-});
-app.delete("/api/push/subscribe",(req,res)=>{
-  const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
-  db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.email!==user.email);saveDB();res.json({ok:true});
-});
-app.post("/api/youth/checkin-token",async(req,res)=>{
-  const user=authUser(req);if(!user||!["admin","priest"].includes(user.role))return res.status(403).json({error:"관리자 또는 사제 권한이 필요합니다."});
-  const event=db.youthEvents.find(e=>e.id===req.body.eventId);if(!event)return res.status(404).json({error:"일정을 찾을 수 없습니다."});
-  const token=crypto.randomBytes(24).toString("hex"),expiresAt=Math.min(event.endAt+86400000,Date.now()+86400000);
-  db.qrTokens=db.qrTokens.filter(t=>t.expiresAt>Date.now());db.qrTokens.push({token,eventId:event.id,createdBy:user.email,expiresAt});saveDB();
-  const url=`${req.protocol}://${req.get("host")}/?checkin=${token}`;
-  const qrDataUrl=await require("qrcode").toDataURL(url,{width:320,margin:2});
-  res.json({token,url,qrDataUrl,expiresAt});
-});
-
-app.post("/api/youth/checkin-quick-token",async(req,res)=>{
-  const user=authUser(req);if(!user||!["admin","priest"].includes(user.role))return res.status(403).json({error:"관리자 또는 사제 권한이 필요합니다."});
-  const title=String(req.body.title||"현장 출석").replace(/[<>]/g,"").trim().slice(0,100);
-  if(title.length<2)return res.status(400).json({error:"출석 모임 이름을 2자 이상 입력해 주세요."});
-  const now=Date.now();
-  const event={id:crypto.randomUUID(),title,description:"관리자 QR 빠른 출석",place:"",startAt:now,endAt:now+86400000,createdBy:user.email,createdAt:now,quickCheckin:true};
-  db.youthEvents.push(event);
-  const token=crypto.randomBytes(24).toString("hex"),expiresAt=now+86400000;
-  db.qrTokens=db.qrTokens.filter(t=>t.expiresAt>Date.now());
-  db.qrTokens.push({token,eventId:event.id,createdBy:user.email,expiresAt});saveDB();
-  const url=`${req.protocol}://${req.get("host")}/?checkin=${token}`;
-  const qrDataUrl=await require("qrcode").toDataURL(url,{width:360,margin:2});
-  res.json({token,url,qrDataUrl,expiresAt,event});
-});
-
-app.post("/api/youth/checkin",(req,res)=>{
-  const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
-  const token=String(req.body.token||"");const qr=db.qrTokens.find(t=>t.token===token&&t.expiresAt>Date.now());
-  if(!qr)return res.status(400).json({error:"QR 코드가 만료되었거나 올바르지 않습니다."});
-  if(db.qrAttendance.some(a=>a.eventId===qr.eventId&&a.email===user.email))return res.status(409).json({error:"이미 출석 처리되었습니다."});
-  const event=db.youthEvents.find(e=>e.id===qr.eventId);if(!event)return res.status(404).json({error:"모임 일정을 찾을 수 없습니다."});
-  const record={id:crypto.randomUUID(),eventId:event.id,eventTitle:event.title,email:user.email,name:user.name,checkedAt:Date.now()};
-  db.qrAttendance.push(record);logMemberActivity(user,"QR 출석",event.title);saveDB();res.json({ok:true,record});
-});
-app.get("/api/youth/checkins",(req,res)=>{
-  const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
-  res.json({checkins:db.qrAttendance.slice().sort((a,b)=>b.checkedAt-a.checkedAt)});
-});
-app.get("/api/youth/finance",(req,res)=>{
-  const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
-  const income=db.feePayments.reduce((n,p)=>n+(p.status==="paid"?p.amount:0),0),expenses=db.feeExpenses.reduce((n,e)=>n+e.amount,0);
-  res.json({payments:db.feePayments.slice().sort((a,b)=>b.createdAt-a.createdAt),expenses:db.feeExpenses.slice().sort((a,b)=>b.createdAt-a.createdAt),income,expensesTotal:expenses,balance:income-expenses});
-});
-app.post("/api/youth/finance/payment",(req,res)=>{
-  const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
-  const email=cleanEmail(req.body.email),member=db.users[email],month=String(req.body.month||"").slice(0,7),amount=Number(req.body.amount);
-  if(!member||!/^[0-9]{4}-[0-9]{2}$/.test(month)||!Number.isSafeInteger(amount)||amount<0||amount>100000000)return res.status(400).json({error:"회원, 납부월, 금액을 확인해 주세요."});
-  const item={id:crypto.randomUUID(),email,name:member.name,month,amount,status:req.body.status==="unpaid"?"unpaid":"paid",createdAt:Date.now()};
-  db.feePayments.push(item);logMemberActivity(user,"회비 기록",`${member.name} ${month} ${amount}원`);saveDB();res.json({payment:item});
-});
-app.post("/api/youth/finance/expense",(req,res)=>{
-  const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
-  const title=String(req.body.title||"").trim().slice(0,100),amount=Number(req.body.amount);
-  if(title.length<2||!Number.isSafeInteger(amount)||amount<1||amount>100000000)return res.status(400).json({error:"지출 항목과 금액을 확인해 주세요."});
-  const item={id:crypto.randomUUID(),title,amount,note:String(req.body.note||"").slice(0,200),createdAt:Date.now()};
-  db.feeExpenses.push(item);logMemberActivity(user,"회비 지출",`${title} ${amount}원`);saveDB();res.json({expense:item});
-});
-app.delete("/api/youth/finance/:type/:id",(req,res)=>{
-  const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
-  const key=req.params.type==="payment"?"feePayments":req.params.type==="expense"?"feeExpenses":null;if(!key)return res.status(400).json({error:"잘못된 항목입니다."});
-  const i=db[key].findIndex(x=>x.id===req.params.id);if(i<0)return res.status(404).json({error:"항목을 찾을 수 없습니다."});
-  db[key].splice(i,1);saveDB();res.json({ok:true});
-});
+```js
 app.get("/api/youth/admin-dashboard",(req,res)=>{
   const user=authUser(req);if(!user||user.role!=="admin")return res.status(403).json({error:"관리자 권한이 필요합니다."});
   const now=new Date(),months=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);const key=d.toISOString().slice(0,7);return {month:key,checkins:db.qrAttendance.filter(a=>new Date(a.checkedAt).toISOString().slice(0,7)===key).length,events:db.youthEvents.filter(e=>new Date(e.startAt).toISOString().slice(0,7)===key).length};});
@@ -329,8 +111,7 @@ app.get("/api/youth/stats",(req,res)=>{
     return {id,name:id.toUpperCase()+" 소그룹",members:records.length,visits:records.reduce((n,r)=>n+(r.visits||0),0),active:records.filter(r=>Date.now()-r.lastSeen<30*86400000).length};
   });
   res.json({groups,totalMembers:groups.reduce((n,g)=>n+g.members,0),totalVisits:groups.reduce((n,g)=>n+g.visits,0),recordings:(db.meetingRecordings||[]).length,storage:cloudRecordingEnabled()?"cloud":"local"});
-});
-app.get("/api/recordings", (req,res)=>{
+});app.get("/api/recordings", (req,res)=>{
   const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
   const items=(db.meetingRecordings||[]).filter(r=>canViewRecording(user,r)).sort((a,b)=>b.createdAt-a.createdAt).map(({storageKey,ownerEmail,groupMembers,...r})=>r);
   res.json({recordings:items,storage:cloudRecordingEnabled()?"cloud":"local"});
@@ -465,12 +246,6 @@ app.get("/api/messages/:email",(req,res)=>{
   const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
   const other=cleanEmail(req.params.email);
   if(!(user.friends||[]).includes(other))return res.status(403).json({error:"친구에게만 메시지를 보낼 수 있습니다."});
-  const messages=db.messages.filter(m=>(m.from===user.email&&m.to===other)||(m.from===other&&m.to===user.email)).slice(-100);
-  res.json({messages});
-});
-app.get("/api/messages/:email",(req,res)=>{
-  const user=authUser(req);if(!user)return res.status(401).json({error:"로그인이 필요합니다."});
-  const other=cleanEmail(req.params.email);if(!(user.friends||[]).includes(other))return res.status(403).json({error:"친구에게만 메시지를 조회할 수 있습니다."});
   const messages=db.messages.filter(m=>(m.from===user.email&&m.to===other)||(m.from===other&&m.to===user.email)).slice(-200);
   res.json({messages:messages.map(m=>({...m,fromName:db.users[m.from]?.name||"회원"}))});
 });
@@ -485,8 +260,7 @@ app.post("/api/messages",(req,res)=>{
   const targetSocket=[...players.entries()].find(([,p])=>p.email===to);
   if(targetSocket)io.to(targetSocket[0]).emit("private-message",payload);
   res.json({message:payload});
-});
-let streamState={active:false,url:"",title:"온라인 미사 영상"};
+});let streamState={active:false,url:"",title:"온라인 미사 영상"};
 let youthAgenda=[];
 let karaokeQueue=[];
 let movieState={url:"",title:"",host:""};
@@ -593,9 +367,7 @@ app.post("/api/admin/members/:email/reject",(req,res)=>{
   const email=cleanEmail(req.params.email),member=db.users[email];if(!member)return res.status(404).json({error:"회원을 찾을 수 없습니다."});
   if(member.role==="admin")return res.status(400).json({error:"관리자 계정은 거절할 수 없습니다."});
   delete db.users[email];saveDB();res.json({ok:true});
-});
-
-io.on("connection", (socket) => {
+});io.on("connection", (socket) => {
   socket.on("join-world", (payload = {}) => {
     const email = sessions.get(String(payload.token || ""));
     const user = email && db.users[email];
@@ -623,7 +395,7 @@ io.on("connection", (socket) => {
     io.emit("youth-room-count",Array.from(players.values()).filter(isInYouthRoom).length);
   });
   socket.on("youth-chat-history-request",()=>{const p=players.get(socket.id);if(!isInYouthRoom(p))return;socket.emit("youth-chat-history",db.youthChatHistory.slice(-100));});
-   socket.on("youth-agenda-request",()=>{
+  socket.on("youth-agenda-request",()=>{
     const p=players.get(socket.id);if(!isInYouthRoom(p))return;
     socket.emit("youth-agenda-state",youthAgenda);
   });
@@ -851,6 +623,35 @@ io.on("connection", (socket) => {
   socket.on("voice-answer", ({to,answer}={}) => { if(players.has(to)) io.to(to).emit("voice-answer",{from:socket.id,answer}); });
   socket.on("voice-ice", ({to,candidate}={}) => { if(players.has(to)) io.to(to).emit("voice-ice",{from:socket.id,candidate}); });
   socket.on("voice-leave", () => socket.broadcast.emit("voice-leave",{id:socket.id}));
-  socket.on("disconnect", () => { const leavingPlayer=players.get(socket.id);youthRpsChoices.delete(socket.id);smallGroups.forEach(g=>{if(g.members.includes(socket.id)){const key=leavingPlayer?.email||leavingPlayer?.name;const rec=key&&db.youthGroupAttendance[g.id][key];if(rec){rec.lastSeen=Date.now();try{saveDB();}catch(err){console.error("Attendance save failed:",err.message);}}socket.to("youth-group-"+g.id).emit("youth-group-video-user-left",{id:socket.id});}g.members=g.members.filter(x=>x!==socket.id);groupRaisedHands[g.id].delete(socket.id);io.to("youth-group-"+g.id).emit("youth-group-hands-state",[...groupRaisedHands[g.id]]);if(groupLeaders[g.id]===socket.id){groupLeaders[g.id]=g.members[0]||null;io.to("youth-group-"+g.id).emit("youth-group-leader-state",{leaderId:groupLeaders[g.id],leaderName:players.get(groupLeaders[g.id])?.name||""});}io.to("youth-group-"+g.id).emit("youth-group-member-roster",g.members.map(id=>({id,name:players.get(id)?.name||"참여자"})));io.to("youth-group-"+g.id).emit("youth-group-attendance-state",Object.values(db.youthGroupAttendance[g.id]||{}).sort((a,b)=>b.lastSeen-a.lastSeen));});players.delete(socket.id);if(Object.values(youthTtt.players).includes(socket.id)){youthTtt={board:Array(9).fill(""),turn:"X",players:{X:null,O:null},status:"대기 중"};io.emit("youth-ttt-state",youthTtt);}io.emit("youth-groups-state",smallGroups.map(g=>({...g,members:g.members.map(id=>players.get(id)?.name).filter(Boolean)})));io.emit("youth-room-count",Array.from(players.values()).filter(isInYouthRoom).length); socket.broadcast.emit("player-left",socket.id); socket.broadcast.emit("voice-leave",{id:socket.id}); });
+  socket.on("disconnect", () => {
+    const leavingPlayer=players.get(socket.id);
+    youthRpsChoices.delete(socket.id);
+    smallGroups.forEach(g=>{
+      if(g.members.includes(socket.id)){
+        const key=leavingPlayer?.email||leavingPlayer?.name;
+        const rec=key&&db.youthGroupAttendance[g.id][key];
+        if(rec){rec.lastSeen=Date.now();try{saveDB();}catch(err){console.error("Attendance save failed:",err.message);}}
+        socket.to("youth-group-"+g.id).emit("youth-group-video-user-left",{id:socket.id});
+      }
+      g.members=g.members.filter(x=>x!==socket.id);
+      groupRaisedHands[g.id].delete(socket.id);
+      io.to("youth-group-"+g.id).emit("youth-group-hands-state",[...groupRaisedHands[g.id]]);
+      if(groupLeaders[g.id]===socket.id){
+        groupLeaders[g.id]=g.members[0]||null;
+        io.to("youth-group-"+g.id).emit("youth-group-leader-state",{leaderId:groupLeaders[g.id],leaderName:players.get(groupLeaders[g.id])?.name||""});
+      }
+      io.to("youth-group-"+g.id).emit("youth-group-member-roster",g.members.map(id=>({id,name:players.get(id)?.name||"참여자"})));
+      io.to("youth-group-"+g.id).emit("youth-group-attendance-state",Object.values(db.youthGroupAttendance[g.id]||{}).sort((a,b)=>b.lastSeen-a.lastSeen));
+    });
+    players.delete(socket.id);
+    if(Object.values(youthTtt.players).includes(socket.id)){
+      youthTtt={board:Array(9).fill(""),turn:"X",players:{X:null,O:null},status:"대기 중"};
+      io.emit("youth-ttt-state",youthTtt);
+    }
+    io.emit("youth-groups-state",smallGroups.map(g=>({...g,members:g.members.map(id=>players.get(id)?.name).filter(Boolean)})));
+    io.emit("youth-room-count",Array.from(players.values()).filter(isInYouthRoom).length);
+    socket.broadcast.emit("player-left",socket.id);
+    socket.broadcast.emit("voice-leave",{id:socket.id});
+  });
 });
 server.listen(PORT, "0.0.0.0", () => console.log(`K-Cathedral v8 running at http://localhost:${PORT}`));
